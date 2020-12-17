@@ -1,0 +1,253 @@
+#include <gtk/gtk.h>
+#include "handle-event.c"
+
+
+
+
+extern GtkWidget *window;
+extern GtkWidget *frame;
+extern GtkWidget *chatArea;
+extern GtkWidget *messageInput;
+extern char *you;
+extern char *onlineUsers[];
+extern int onlineUserCount;
+GtkWidget *userListBox;
+
+void set_size(GtkWidget * gw, int width, int height) {
+	gtk_widget_set_size_request(gw, width, height);
+}
+
+void set_pos(GtkWidget * gw, int x, int y) {
+	gtk_fixed_put(GTK_FIXED(frame), gw, x, y);
+}
+
+int destroySomething(GtkWidget * widget, gpointer gp) {
+	gtk_widget_destroy(gp);
+}
+
+
+
+int showMessage(GtkWidget * parent , GtkMessageType type,  char * mms, char * content) {
+	GtkWidget *mdialog;
+	mdialog = gtk_message_dialog_new(GTK_WINDOW(parent),
+	                                 GTK_DIALOG_DESTROY_WITH_PARENT,
+	                                 type,
+	                                 GTK_BUTTONS_OK,
+	                                 "%s", mms);
+	gtk_message_dialog_format_secondary_text(GTK_MESSAGE_DIALOG(mdialog), "%s",  content);
+	gtk_dialog_run(GTK_DIALOG(mdialog));
+	gtk_widget_destroy(mdialog);
+}
+
+int showLoginDialog() {
+	GtkWidget *loginDialog;
+	loginDialog = gtk_dialog_new_with_buttons(LOGIN, GTK_WINDOW(window),
+	                                        GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT, NULL, NULL);
+
+	GtkWidget *dialog_ground = gtk_fixed_new();
+	GtkWidget* tframe = gtk_frame_new(USERNAME);
+	GtkWidget* bframe = gtk_frame_new(PASSWORD);
+	GtkWidget* box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+	GtkWidget * loginButton =  gtk_button_new_with_label(LOGIN);
+	GtkWidget * cancelButton = gtk_button_new_with_label(CANCEL);
+	GtkWidget* inputUsername = gtk_entry_new();
+	GtkWidget* inputPassword = gtk_entry_new();
+	gtk_entry_set_visibility (inputPassword, FALSE);
+
+	gtk_box_pack_start(GTK_BOX(box), loginButton, TRUE, TRUE, 2);
+	gtk_box_pack_start(GTK_BOX(box), cancelButton, TRUE, TRUE, 2);
+
+	set_size(tframe, 300, 50);
+	set_size(bframe, 300, 50);
+	set_size(box, 300, 50);
+	set_size(loginButton, 100, 30);
+	set_size(cancelButton, 100, 30);
+
+	gtk_widget_set_margin_left(inputUsername, 2);
+	gtk_widget_set_margin_right(inputUsername, 2);
+	gtk_widget_set_margin_left(inputPassword, 2);
+	gtk_widget_set_margin_right(inputPassword, 2);
+
+	gtk_fixed_put(GTK_FIXED(dialog_ground), tframe, 0, 20);
+	gtk_fixed_put(GTK_FIXED(dialog_ground), bframe, 0, 80);
+	gtk_fixed_put(GTK_FIXED(dialog_ground), box, 0, 220);
+
+	gtk_container_add(GTK_CONTAINER(tframe), inputUsername);
+	gtk_container_add(GTK_CONTAINER(bframe), inputPassword);
+
+	gtk_box_pack_start(GTK_BOX(gtk_dialog_get_content_area(GTK_DIALOG(loginDialog))), dialog_ground,  TRUE, TRUE, 0);
+	
+	GtkWidget * data_array[3];
+	data_array[0] = inputUsername;
+	data_array[1] = inputPassword;
+	data_array[2] = loginDialog;
+	g_signal_connect(loginButton, "clicked", G_CALLBACK(onLoginButtonClicked), data_array);
+	g_signal_connect(cancelButton, "clicked", G_CALLBACK(destroySomething), loginDialog);
+	gtk_widget_show_all(loginDialog);
+	gtk_dialog_run(GTK_DIALOG(loginDialog));
+	gtk_widget_destroy(loginDialog);
+}
+
+GtkWidget * initMessageInput(int x, int y){
+	GtkWidget *inputGroupBox;
+	GtkWidget *inputBox;
+	GtkWidget *sendButton;
+
+	//Khoi tao inputGroupBox
+	inputGroupBox = gtk_frame_new(TEXT_INPUT_LABEL);
+	set_size(inputGroupBox, 450, 60);
+	set_pos(inputGroupBox, x, y);
+
+	//Khoi tao inputBox chua o text va nut send
+	inputBox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+	gtk_container_add(GTK_CONTAINER(inputGroupBox), inputBox);
+
+	//Khoi tao o nhap va chatArea hien thi nghia
+	messageInput = gtk_entry_new();
+	set_size(messageInput, 388, 20);
+
+	//send button
+	sendButton = gtk_button_new_with_label(SEND_LABEL);
+	gtk_widget_set_margin_bottom(sendButton, 5);
+	gtk_widget_set_margin_top(sendButton, 0);
+
+	gtk_box_pack_start(GTK_BOX(inputBox), messageInput, TRUE, TRUE, 5);
+	gtk_box_pack_start(GTK_BOX(inputBox), sendButton, TRUE, TRUE, 5);
+
+	g_signal_connect(sendButton, "clicked", G_CALLBACK(onSendButtonClicked), NULL);
+	return messageInput;
+}
+
+GtkWidget * initChatArea(int x, int y){
+
+	GtkWidget *chatOutputScroller;
+	GtkWidget *outputBox;
+
+	//khoi tao hop chua chatArea hien thi khung chat
+	outputBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+	set_size(outputBox, 450, 280);
+	set_pos(outputBox, x, y);
+
+	//Khung chat
+	chatArea = gtk_text_view_new();
+	gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(chatArea), GTK_WRAP_WORD_CHAR);//Chong tran be ngang
+
+	//Khoi tao thanh keo truot cho chatArea
+	chatOutputScroller = gtk_scrolled_window_new(NULL, NULL);
+	gtk_container_add(GTK_CONTAINER(chatOutputScroller), chatArea);
+
+	gtk_box_pack_start(GTK_BOX(outputBox), chatOutputScroller, TRUE, TRUE, 2);
+	return chatArea;
+}
+
+
+void initCurrentUserBox(int x, int y){
+	GtkWidget *currentUserGroupBox;
+	GtkWidget *yournameLabel;
+	GtkWidget *logoutButton;
+	GtkWidget *containBox;
+	currentUserGroupBox = gtk_frame_new(YOU);
+	containBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+	gtk_container_add(GTK_CONTAINER(currentUserGroupBox), containBox);
+
+	set_size(currentUserGroupBox, 115, 64);
+	set_pos(currentUserGroupBox, x, y);
+	yournameLabel = gtk_label_new( you);
+
+	logoutButton = gtk_button_new_with_label(LOGOUT);
+	set_size(logoutButton, 110, 34);
+	// set_pos(logoutButton, 5, 64);
+
+	gtk_box_pack_start(GTK_BOX(containBox), yournameLabel, TRUE, TRUE, 5);
+	gtk_box_pack_start(GTK_BOX(containBox), logoutButton, TRUE, TRUE, 0);
+
+	g_signal_connect(logoutButton, "clicked", G_CALLBACK(onLogoutButtonClicked), NULL);
+}
+
+GtkWidget * initPublicChannelBox(int x, int y){
+	GtkWidget *publicChannelGroupBox;
+	GtkWidget * publicChannelButton;
+	publicChannelGroupBox = gtk_frame_new(PUBLIC);
+	set_size(publicChannelGroupBox, 115, 54);
+	set_pos(publicChannelGroupBox, x, y);
+
+	publicChannelButton = gtk_button_new_with_label(PUBLIC);
+	gtk_container_add(GTK_CONTAINER(publicChannelGroupBox), publicChannelButton);
+
+	g_signal_connect(publicChannelButton, "clicked", G_CALLBACK(onChannelButtonClicked), PUBLIC);
+	return publicChannelButton;
+}
+
+
+
+// void onLogoutButtonClicked(GtkWidget * widget, gpointer data){
+// 	destroySomething(NULL, window);
+// 	showLoginDialog();
+// }
+void delFromUserBox(gpointer child, gpointer user_data){
+	gtk_container_remove(userListBox, (GtkWidget*)child);
+}
+
+int updateUserList(char * n[], int count){
+	GList * childs = gtk_container_get_children(userListBox);
+	g_list_foreach(childs, delFromUserBox, NULL);
+	addButtonToUserListBox(n, count);
+}
+void addButtonToUserListBox(char * n[], int count){
+	int i = 0;
+	for (int i = 0; i < count; ++i)
+	{
+		GtkWidget * userIndex = gtk_button_new_with_label(n[i]);
+		gtk_box_pack_start(GTK_BOX(userListBox), userIndex, TRUE, TRUE, 0);
+		g_signal_connect(userIndex, "clicked", G_CALLBACK(onChannelButtonClicked), n[i]);
+	}
+	gtk_widget_show_all(userListBox);
+}
+GtkWidget * initUserList(int x, int y, char * names[], int amount){
+	GtkWidget *userListGroupBox;
+	GtkWidget *userListScroller;
+
+	// Khoi tao List user groupbox
+	userListGroupBox = gtk_frame_new(ONLINE_LIST_LABEL);
+	set_size(userListGroupBox, 115, 186);
+	set_pos(userListGroupBox, x, y);
+
+	//Khoi tao hop chua cac nut
+	userListBox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+	//Khoi tao thanh keo truot cho chatArea
+	userListScroller = gtk_scrolled_window_new(NULL, NULL);
+	gtk_container_add(GTK_CONTAINER(userListScroller), userListBox);
+
+	gtk_container_add(GTK_CONTAINER(userListGroupBox), userListScroller);
+	addButtonToUserListBox(names, 7);
+
+	return userListGroupBox;
+}
+
+int showMainWindow(){
+	// Khoi tao cua so
+	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+	gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
+	//gtk_window_set_default_size(GTK_WINDOW(window), -1, -1);
+	gtk_window_set_title(GTK_WINDOW(window), APP_TITLE);
+	gtk_window_set_resizable(GTK_WINDOW(window), FALSE);
+	//Khoi tao nen
+	frame = gtk_fixed_new();
+	gtk_container_add(GTK_CONTAINER(window), frame);
+	gtk_widget_set_margin_bottom(frame, 5);
+	gtk_widget_set_margin_right(frame, 5);
+
+
+	initCurrentUserBox(5,4);
+	initPublicChannelBox(5, 94);
+	initUserList(5, 154, onlineUsers, 7);
+	initChatArea(120, 10);
+	initMessageInput(120, 280);
+
+
+	gtk_widget_show_all(window);
+
+	g_signal_connect(window, "destroy", G_CALLBACK (gtk_main_quit), NULL);//Ket thuc chuong trinh khi dong cua so chinh
+
+	gtk_main();
+}
