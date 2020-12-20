@@ -25,6 +25,7 @@ typedef struct $
 
 User users[USER_NUM_MAX];
 int auth[USER_NUM_MAX];
+User userRegister;
 
 int sendResponse(int connfd)
 {
@@ -160,6 +161,7 @@ int loadUserList(const char *source)
         sscanf(temp, "%s %s", users[i].username, users[i].password);
         // printf("User:{\n  username:\"%s\"\n  password:\"%s\"\n}\n", users[i].username, users[i].password);
     }
+    // fclose(f);
     return i;
 }
 
@@ -188,6 +190,21 @@ int handleUserSendUsername(char *message, int connfd)
     return userId;
 }
 
+int handleUserSendUsernameRegister(char *message, int connfd){
+    int userId = checkUser(message);
+    if (userId == NONE_USER)
+    {
+        sprintf(buf, "%c%s#%s", REGISTER_RESPONSE_ACTION, SUCCESS, OK);
+        strcpy(userRegister.username, message);
+        printf("****%s\n", userRegister.username);
+    }
+    else
+    {
+        sprintf(buf, "%c%s#%s", REGISTER_RESPONSE_ACTION, FAILED, REGISTER_FAILED);
+    }
+    sendResponse(connfd);
+    return userId;
+}
 
 int handleUserSendPassword(char *message, int connfd)
 {
@@ -215,6 +232,11 @@ int handleUserSendPassword(char *message, int connfd)
     }
     sendResponse(connfd);
     return userId;
+}
+
+int handleUserSendPasswordRegister(char *message){
+    strcpy(userRegister.password, crypt(message, "salt"));
+
 }
 
 void handlePublicMessage(int connfd, char *message)
@@ -287,6 +309,9 @@ int handleMessage(int connfd)
         case SEND_USER_ACTION:
             handleUserSendUsername(message, connfd);
             break;
+        case SEND_USER_REGISTER_ACTION:
+            handleUserSendUsernameRegister(message, connfd);
+            break;
         case SEND_PASSWORD_ACTION:
             if (handleUserSendPassword(message, connfd) != CODE_PASSWORD_INCORRECT)
             {
@@ -295,6 +320,9 @@ int handleMessage(int connfd)
                 printf("Before Thread\n");
                 pthread_create(&thread_id, NULL, myThreadFun, users[auth[connfd]].username);
             }
+            break;
+        case SEND_PASSWORD_REGISTER_ACTION:
+            handleUserSendPasswordRegister(message);
             break;
         case LOGOUT_ACTION:
             handleUserLogout(connfd);

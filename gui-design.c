@@ -13,8 +13,10 @@ extern int onlineUserCount;
 extern char *publicStream;
 GtkWidget *userListBox;
 GtkWidget *loginDialog = NULL;
+GtkWidget *registerDialog = NULL;
 GtkWidget *inputUsername;
 GtkWidget *inputPassword;
+GtkWidget *inputRePassword;
 GtkWidget *yournameLabel;
 GtkWidget *publicChannelButton;
 GtkWidget *userListScroller;
@@ -61,18 +63,21 @@ void initLoginDialog()
 	GtkWidget *box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
 	GtkWidget *loginButton = gtk_button_new_with_label(LOGIN);
 	GtkWidget *cancelButton = gtk_button_new_with_label(CANCEL);
+	GtkWidget *registerButton = gtk_button_new_with_label(REGISTER);
 	inputUsername = gtk_entry_new();
 	inputPassword = gtk_entry_new();
 	gtk_entry_set_visibility(GTK_ENTRY(inputPassword), FALSE);
 
 	gtk_box_pack_start(GTK_BOX(box), loginButton, TRUE, TRUE, 2);
 	gtk_box_pack_start(GTK_BOX(box), cancelButton, TRUE, TRUE, 2);
+	gtk_box_pack_start(GTK_BOX(box), registerButton, TRUE, TRUE, 2);
 
 	set_size(tframe, 300, 50);
 	set_size(bframe, 300, 50);
 	set_size(box, 300, 50);
 	set_size(loginButton, 100, 30);
 	set_size(cancelButton, 100, 30);
+	set_size(registerButton, 100, 30);
 
 	gtk_widget_set_margin_start(inputUsername, 2);
 	gtk_widget_set_margin_end(inputUsername, 2);
@@ -81,7 +86,7 @@ void initLoginDialog()
 
 	gtk_fixed_put(GTK_FIXED(dialog_ground), tframe, 0, 20);
 	gtk_fixed_put(GTK_FIXED(dialog_ground), bframe, 0, 80);
-	gtk_fixed_put(GTK_FIXED(dialog_ground), box, 0, 220);
+	gtk_fixed_put(GTK_FIXED(dialog_ground), box, 0, 150);
 
 	gtk_container_add(GTK_CONTAINER(tframe), inputUsername);
 	gtk_container_add(GTK_CONTAINER(bframe), inputPassword);
@@ -94,12 +99,67 @@ void initLoginDialog()
 	data_array[2] = loginDialog;
 	g_signal_connect(loginButton, "clicked", G_CALLBACK(handleLoginButtonClicked), data_array);
 	g_signal_connect(cancelButton, "clicked", G_CALLBACK(onExit), loginDialog);
+	g_signal_connect(registerButton, "clicked", G_CALLBACK(handleRegisterButtonClicked), registerDialog);
 	g_signal_connect(inputUsername, "activate", G_CALLBACK(handleLoginButtonClicked), data_array);
 	g_signal_connect(inputPassword, "activate", G_CALLBACK(handleLoginButtonClicked), data_array);
 	g_signal_connect(loginDialog, "destroy", G_CALLBACK(onExit), NULL); //Ket thuc chuong trinh khi dong cua so chinh
 	// gtk_widget_show_all(loginDialog);
 	// gtk_dialog_run(GTK_DIALOG(loginDialog));
 	// gtk_widget_destroy(loginDialog);
+}
+
+void initRegisterDialog()
+{
+	registerDialog = gtk_dialog_new_with_buttons(REGISTER, GTK_WINDOW(window), GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT, NULL, NULL);
+
+	GtkWidget *dialog_ground = gtk_fixed_new();
+	GtkWidget *tframe = gtk_frame_new(USERNAME);
+	GtkWidget *bframe = gtk_frame_new(PASSWORD);
+	// GtkWidget *bframe = gtk_frame_new(PASSWORD);
+	GtkWidget *box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+	GtkWidget *registerButton = gtk_button_new_with_label(REGISTER);
+	GtkWidget *cancelButton = gtk_button_new_with_label("BACK");
+	inputUsername = gtk_entry_new();
+	inputPassword = gtk_entry_new();
+	// inputRePassword = gtk_entry_new();
+	gtk_entry_set_visibility(GTK_ENTRY(inputPassword), FALSE);
+	// gtk_entry_set_visibility(GTK_ENTRY(inputRePassword), FALSE);
+
+	gtk_box_pack_start(GTK_BOX(box), registerButton, TRUE, TRUE, 2);
+	gtk_box_pack_start(GTK_BOX(box), cancelButton, TRUE, TRUE, 2);
+
+	set_size(tframe, 300, 50);
+	set_size(bframe, 300, 50);
+	set_size(box, 300, 50);
+	set_size(registerButton, 100, 30);
+	set_size(cancelButton, 100, 30);
+
+	gtk_widget_set_margin_start(inputUsername, 2);
+	gtk_widget_set_margin_end(inputUsername, 2);
+	gtk_widget_set_margin_start(inputPassword, 2);
+	gtk_widget_set_margin_end(inputPassword, 2);
+	// gtk_widget_set_margin_start(inputRePassword, 2);
+	// gtk_widget_set_margin_end(inputRePassword, 2);
+
+	gtk_fixed_put(GTK_FIXED(dialog_ground), tframe, 0, 20);
+	gtk_fixed_put(GTK_FIXED(dialog_ground), bframe, 0, 80);
+	gtk_fixed_put(GTK_FIXED(dialog_ground), box, 0, 220);
+
+	gtk_container_add(GTK_CONTAINER(tframe), inputUsername);
+	gtk_container_add(GTK_CONTAINER(bframe), inputPassword);
+	// gtk_container_add(GTK_CONTAINER(bframe), inputRePassword);
+
+	gtk_box_pack_start(GTK_BOX(gtk_dialog_get_content_area(GTK_DIALOG(registerDialog))), dialog_ground, TRUE, TRUE, 0);
+
+	GtkWidget *data_array[3];
+	data_array[0] = inputUsername;
+	data_array[1] = inputPassword;
+	data_array[2] = registerDialog;
+	g_signal_connect(registerButton, "clicked", G_CALLBACK(handleRegisterAccountClicked), data_array);
+	g_signal_connect(cancelButton, "clicked", G_CALLBACK(backLogin), registerDialog);
+	g_signal_connect(inputUsername, "activate", G_CALLBACK(handleRegisterAccountClicked), data_array);
+	g_signal_connect(inputPassword, "activate", G_CALLBACK(handleRegisterAccountClicked), data_array);
+	g_signal_connect(registerDialog, "destroy", G_CALLBACK(onExit), NULL); //Ket thuc chuong trinh khi dong cua so chinh
 }
 
 void showLoginDialog()
@@ -110,6 +170,17 @@ void showLoginDialog()
 	gtk_dialog_run(GTK_DIALOG(loginDialog));
 	return;
 }
+
+void showRegisterDialog()
+{
+	if (registerDialog == NULL)
+		initRegisterDialog();
+	// puts("Show register dialog");
+	gtk_widget_show_all(registerDialog);
+	gtk_dialog_run(GTK_DIALOG(registerDialog));
+	return;
+}
+
 GtkWidget *initMessageInput(int x, int y)
 {
 	GtkWidget *inputGroupBox;

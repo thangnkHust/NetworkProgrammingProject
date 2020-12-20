@@ -4,6 +4,7 @@
 #include "string-constant.h"
 #include "integer-constant.h"
 #include "client.c"
+// #include "server.c"
 
 #define runInUIThread(x) \
 	gdk_threads_enter(); \
@@ -18,6 +19,7 @@ extern GtkWidget *initUserList(int, int, char[][32], int);
 extern void addButtonToUserListBox(char[][32], int);
 extern void sendThread(char *);
 extern GtkWidget *loginDialog;
+extern GtkWidget *registerDialog;
 extern GtkWidget *inputUsername;
 extern GtkWidget *inputPassword;
 extern GtkWidget *yournameLabel;
@@ -32,6 +34,7 @@ extern GtkWidget *chatArea;
 extern void clearBuf(char *);
 extern int sendRequest();
 extern void showLoginDialog();
+extern void showRegisterDialog();
 extern void showMessage(GtkWidget *, GtkMessageType, char *, char *);
 extern char * saveToUserMessageStream(char *, char *);
 extern void showMainWindow();
@@ -41,6 +44,7 @@ extern int findUserMessageStream(char * );
 extern User onlineUsersStream[USER_NUM_MAX];
 char username[100];
 char password[100];
+// extern User users;
 
 void clearStreamList(){
 	int i; 
@@ -94,10 +98,22 @@ int onSentUsername()
 	sprintf(inBuf, "%c%s", SEND_PASSWORD_ACTION, password);
 	sendRequest();
 }
+
+int onSendPasswordRegister(){
+	clearBuf(inBuf);
+	sprintf(inBuf, "%c%s", SEND_PASSWORD_REGISTER_ACTION, password);
+	sendRequest();
+}
 int onLoginFailed(char *message)
 {
 	//invalid
 	runInUIThread(showMessage(loginDialog, GTK_MESSAGE_ERROR, LOGIN_FAILED, message));
+	// showMessage(loginDialog, GTK_MESSAGE_ERROR, LOGIN_FAILED, message);
+}
+int onRegisterFailed(char *message)
+{
+	//invalid
+	runInUIThread(showMessage(registerDialog, GTK_MESSAGE_ERROR, REGISTER_FAILED, message));
 	// showMessage(loginDialog, GTK_MESSAGE_ERROR, LOGIN_FAILED, message);
 }
 void handleLoginButtonClicked(GtkWidget *widget, gpointer gp)
@@ -111,6 +127,28 @@ void handleLoginButtonClicked(GtkWidget *widget, gpointer gp)
 	{
 		clearBuf(inBuf);
 		sprintf(inBuf, "%c%s", SEND_USER_ACTION, username);
+		sendRequest();
+	}
+}
+
+void handleRegisterButtonClicked(GtkWidget *widget, gpointer gp)
+{
+	// puts("Hello Register");
+	gtk_widget_hide(loginDialog);
+	showRegisterDialog();
+}
+
+void handleRegisterAccountClicked(GtkWidget *widget, gpointer gp)
+{
+	strcpy(username, (char *)gtk_entry_get_text(GTK_ENTRY(inputUsername)));
+	strcpy(password, (char *)gtk_entry_get_text(GTK_ENTRY(inputPassword)));
+
+	if (strlen(username) < 1 || strlen(password) < 1)
+		showMessage(registerDialog, GTK_MESSAGE_WARNING, REGISTER_FAILED, NOT_EMPTY);
+	else
+	{
+		clearBuf(inBuf);
+		sprintf(inBuf, "%c%s", SEND_USER_REGISTER_ACTION, username);	
 		sendRequest();
 	}
 }
@@ -157,6 +195,12 @@ void onExit(GtkWidget *widget, gpointer data)
 {
 	exit(0);
 }
+
+void backLogin(GtkWidget *widget, gpointer data){
+	gtk_widget_hide(registerDialog);
+	showLoginDialog();
+}
+
 void onSendButtonClicked(GtkWidget *widget, gpointer data)
 {
 	clearBuf(inBuf);

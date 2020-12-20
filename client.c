@@ -112,6 +112,22 @@ int handleLoginResponse(char *_message)
     return 0;
 }
 
+int handleRegisterResponse(char *_message)
+{
+    char *value = _message;
+    _message = splitMessage(_message);
+    printf("value:%s\nmessage:%s\n", value, _message);
+    if (strcmp(value, SUCCESS) == 0)
+    {
+        onSendPasswordRegister();
+    }
+    else
+    {
+        onRegisterFailed(_message);
+    }
+    return 0;
+}
+
 char * saveToUserMessageStream(char * sender, char * message){
     int i, found = 0;
     char temp[MAXLINE];
@@ -260,11 +276,14 @@ void handleReponse(char *buff, int n)
         buff[strlen(buff) - 1] = '\0';
     action = buff[0];
     message = buff + 1;
-    puts(buff); //
+    // puts(buff); //
     switch (action)
     {
     case LOGIN_RESPONSE_ACTION:
         handleLoginResponse(message);
+        break;
+    case REGISTER_RESPONSE_ACTION:
+        handleRegisterResponse(message);
         break;
     case GET_LIST_USER_ACTION:
         handleOnlineUsersList(message);
