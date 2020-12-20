@@ -25,7 +25,9 @@ typedef struct $
 
 User users[USER_NUM_MAX];
 int auth[USER_NUM_MAX];
-User userRegister;
+
+User userRegister;  // temp user save to File
+int countUserOfFile;
 
 int sendResponse(int connfd)
 {
@@ -161,7 +163,7 @@ int loadUserList(const char *source)
         sscanf(temp, "%s %s", users[i].username, users[i].password);
         // printf("User:{\n  username:\"%s\"\n  password:\"%s\"\n}\n", users[i].username, users[i].password);
     }
-    // fclose(f);
+    fclose(f);
     return i;
 }
 
@@ -236,7 +238,15 @@ int handleUserSendPassword(char *message, int connfd)
 
 int handleUserSendPasswordRegister(char *message){
     strcpy(userRegister.password, crypt(message, "salt"));
-
+    strcpy(users[countUserOfFile].username, userRegister.username);
+    strcpy(users[countUserOfFile].password, userRegister.password);
+    FILE *f = fopen("users.txt", "w+");
+    // printf("%s %s \n", users[0].username, users[0].password);
+    for(int i = 0; i <= countUserOfFile; i++){
+        fprintf(f, "%s\t%s%\n", users[i].username, users[i].password);
+    }
+    countUserOfFile++;
+    fclose(f);
 }
 
 void handlePublicMessage(int connfd, char *message)
@@ -452,7 +462,7 @@ int createServer()
 int main(int argc, char **argv)
 {
     publicStream = (char *)malloc(1024 * MAXLINE);
-    loadUserList("users.txt");
+    countUserOfFile = loadUserList("users.txt");
     initAuth();
     createServer();
 }

@@ -34,6 +34,7 @@ extern char *currentChannel;
 extern User onlineUsersStream[USER_NUM_MAX];
 extern char * you;
 extern void *showBubbleNotify(void *);
+
 char *push(char *str)
 {
     g_mutex_lock(&queueMutex);
