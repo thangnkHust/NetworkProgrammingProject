@@ -22,6 +22,8 @@ extern GtkWidget *loginDialog;
 extern GtkWidget *registerDialog;
 extern GtkWidget *inputUsername;
 extern GtkWidget *inputPassword;
+extern GtkWidget *inputUsernameRegister;
+extern GtkWidget *inputPasswordRegister;
 extern GtkWidget *yournameLabel;
 extern GtkWidget *messageInput;
 extern char *you;
@@ -44,7 +46,7 @@ extern int findUserMessageStream(char * );
 extern User onlineUsersStream[USER_NUM_MAX];
 char username[100];
 char password[100];
-// extern User users;
+char *ltrim(char *string, char junk);
 
 void clearStreamList(){
 	int i; 
@@ -66,18 +68,28 @@ void handleLogoutButtonClicked(GtkWidget *widget, gpointer *data)
 	sendRequest();
 	showLoginDialog();
 }
-
+// TODO: Login success
 int onLoginSuccess(char *message)
 {
 	//success
 	runInUIThread(showMessage(loginDialog, GTK_MESSAGE_WARNING, LOGIN_SUCCESS, WELLCOME));
 	runInUIThread(gtk_entry_set_text(GTK_ENTRY(inputPassword), BLANK));
 	runInUIThread(showMainWindow());
-	runInUIThread(gtk_widget_set_visible(loginDialog, FALSE);
-	gtk_label_set_text(GTK_LABEL(yournameLabel), username););
+	runInUIThread(gtk_widget_set_visible(loginDialog, FALSE));
+	gtk_label_set_text(GTK_LABEL(yournameLabel), username);
 	clearBuf(inBuf);
 	sprintf(inBuf, "%c", GET_PUBLIC_STREAM);
 	sendRequest();
+	// return 0;
+}
+
+int onRegisterSuccess()
+{
+	//success
+	runInUIThread(showMessage(registerDialog, GTK_MESSAGE_ERROR, REGISTER_SUCCESS, BACK_LOGIN));
+	runInUIThread(gtk_widget_hide(registerDialog));
+	gtk_widget_show_all(loginDialog);
+	// return 0;
 }
 
 void *showBubbleNotify(void *notify){	
@@ -99,6 +111,7 @@ int onSentUsername()
 	sendRequest();
 }
 
+// TODO: send password register
 int onSendPasswordRegister(){
 	clearBuf(inBuf);
 	sprintf(inBuf, "%c%s", SEND_PASSWORD_REGISTER_ACTION, password);
@@ -140,15 +153,15 @@ void handleRegisterButtonClicked(GtkWidget *widget, gpointer gp)
 
 void handleRegisterAccountClicked(GtkWidget *widget, gpointer gp)
 {
-	strcpy(username, (char *)gtk_entry_get_text(GTK_ENTRY(inputUsername)));
-	strcpy(password, (char *)gtk_entry_get_text(GTK_ENTRY(inputPassword)));
+	strcpy(username, (char *)gtk_entry_get_text(GTK_ENTRY(inputUsernameRegister)));
+	strcpy(password, (char *)gtk_entry_get_text(GTK_ENTRY(inputPasswordRegister)));
 
 	if (strlen(username) < 1 || strlen(password) < 1)
 		showMessage(registerDialog, GTK_MESSAGE_WARNING, REGISTER_FAILED, NOT_EMPTY);
 	else
 	{
 		clearBuf(inBuf);
-		sprintf(inBuf, "%c%s", SEND_USER_REGISTER_ACTION, username);	
+		sprintf(inBuf, "%c%s", SEND_USER_REGISTER_ACTION, username); 
 		sendRequest();
 	}
 }
@@ -207,18 +220,36 @@ void onSendButtonClicked(GtkWidget *widget, gpointer data)
 	char text[100];
 	char *entryText;
 	entryText = (char *)gtk_entry_get_text(GTK_ENTRY(messageInput));
-	printf("***%d", entryText == ' ' ? 1: 0);
-	strcpy(text, entryText);
-	gtk_entry_set_text(GTK_ENTRY(messageInput), BLANK);
-	if (strcmp(currentChannel, PUBLIC) == 0)
-		sprintf(inBuf, "%c%s", CHANNEL_MESSAGE_ACTION, text);
-	else{
-		char temp [MAXLINE];
-		sprintf(temp, "%s:%s", you, text);
-		char * xstream = saveToUserMessageStream(currentChannel, temp);
-		printf("%s\n", xstream);
-		textViewSetText(chatArea, xstream);
-		sprintf(inBuf, "%c%s#%s", PRIVATE_MESSAGE_ACTION, currentChannel, text);
+	if(strlen(entryText) != 0){
+		strcpy(text, entryText);
+		gtk_entry_set_text(GTK_ENTRY(messageInput), BLANK);
+		if (strcmp(currentChannel, PUBLIC) == 0)
+			sprintf(inBuf, "%c%s", CHANNEL_MESSAGE_ACTION, text);
+		else{
+			char temp [MAXLINE];
+			sprintf(temp, "%s:%s", you, text);
+			char * xstream = saveToUserMessageStream(currentChannel, temp);
+			printf("%s\n", xstream);
+			textViewSetText(chatArea, xstream);
+			sprintf(inBuf, "%c%s#%s", PRIVATE_MESSAGE_ACTION, currentChannel, text);
+		}
+		sendRequest();
 	}
-	sendRequest();
+}
+
+char *ltrim(char *string, char junk)
+{
+    char* original = string;
+    char *p = original;
+    int trimmed = 0;
+    do
+    {
+        if (*original != junk || trimmed)
+        {
+            trimmed = 1;
+            *p++ = *original;
+        }
+    }
+    while (*original++ != '\0');
+    return string;
 }

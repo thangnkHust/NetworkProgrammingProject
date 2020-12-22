@@ -236,7 +236,7 @@ int handleUserSendPassword(char *message, int connfd)
     return userId;
 }
 
-int handleUserSendPasswordRegister(char *message){
+int handleUserSendPasswordRegister(char *message, int connfd){
     strcpy(userRegister.password, crypt(message, "salt"));
     strcpy(users[countUserOfFile].username, userRegister.username);
     strcpy(users[countUserOfFile].password, userRegister.password);
@@ -247,6 +247,9 @@ int handleUserSendPasswordRegister(char *message){
     }
     countUserOfFile++;
     fclose(f);
+    cleanBuffer(buf);
+    sprintf(buf, "%c%s#%s", RESPONSE_PASSWORD_REGISTER_ACTION, SUCCESS, BACK_LOGIN);
+    sendResponse(connfd);
 }
 
 void handlePublicMessage(int connfd, char *message)
@@ -332,7 +335,7 @@ int handleMessage(int connfd)
             }
             break;
         case SEND_PASSWORD_REGISTER_ACTION:
-            handleUserSendPasswordRegister(message);
+            handleUserSendPasswordRegister(message, connfd);
             break;
         case LOGOUT_ACTION:
             handleUserLogout(connfd);

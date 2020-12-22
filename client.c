@@ -129,6 +129,17 @@ int handleRegisterResponse(char *_message)
     return 0;
 }
 
+int handleNotiRegisterResponse(char *_message){
+    char *value = _message;
+    _message = splitMessage(_message);
+    printf("value:%s\nmessage:%s\n", value, _message);
+    if (strcmp(value, SUCCESS) == 0)
+    {
+        onRegisterSuccess();
+    }
+    return 0;
+}
+
 char * saveToUserMessageStream(char * sender, char * message){
     int i, found = 0;
     char temp[MAXLINE];
@@ -286,6 +297,8 @@ void handleReponse(char *buff, int n)
     case REGISTER_RESPONSE_ACTION:
         handleRegisterResponse(message);
         break;
+    case RESPONSE_PASSWORD_REGISTER_ACTION:
+        handleNotiRegisterResponse(message);
     case GET_LIST_USER_ACTION:
         handleOnlineUsersList(message);
         break;

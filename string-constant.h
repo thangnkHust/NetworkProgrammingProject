@@ -1,4 +1,4 @@
-#define APP_TITLE "Chatroom internet programming"
+#define APP_TITLE "Chatroom ITSSS"
 #define TEXT_INPUT_LABEL ""
 #define SEND_LABEL "Gửi"
 #define ONLINE_LIST_LABEL "Online"
@@ -11,8 +11,9 @@
 #define CANCEL "Hủy"
 #define LOGIN_SUCCESS "Đăng nhập thành công"
 #define REGISTER_SUCCESS "Đăng ký thành công"
+#define BACK_LOGIN "Tiến hành đăng nhập"
 #define LOGIN_FAILED "Đăng nhập thất bại"
-#define REGISTER_FAILED "Tài khoản đã tồn tại"
+#define REGISTER_FAILED "Đăng ký thất bại"
 #define FORCE_LOGOUT "Phiên làm việc đã hết"
 #define ACCOUNT_INVALID "Tài khoản hoặc mật khẩu không hợp lệ"
 #define USER_INVALID "Người dùng không tồn tại"
@@ -29,6 +30,7 @@
 #define SEND_PASSWORD_REGISTER_ACTION 'B' 
 #define LOGIN_RESPONSE_ACTION 'R' // Response login
 #define REGISTER_RESPONSE_ACTION 'A' // Response register
+#define RESPONSE_PASSWORD_REGISTER_ACTION 'Q'
 #define GET_LIST_USER_ACTION 'L'  // List user current
 #define PRIVATE_MESSAGE_ACTION 'M'  // 
 #define CHANNEL_MESSAGE_ACTION 'C'
