@@ -82,6 +82,11 @@ int sendRequest()
     puts("\t|");
     printf("\t+--->Send to server :{%s}\n", inBuf);
     printf("\n--------------->Sent %d bytes:<-----------------\n\n", n);
+    FILE *logfile = fopen("log.txt", "a");
+    fprintf(logfile, "\t| Client %s send to server:\n", you);
+    fprintf(logfile, "\t+--->Send to server :{%s}\n", inBuf);
+    fprintf(logfile, "\n--------------->Sent %d bytes:<-----------------\n\n", n);
+    fclose(logfile);
     return send(client_sock_fd, inBuf, n, 0);
 }
 char *splitMessage(char *message)
@@ -367,8 +372,11 @@ int createClient(int argc, char *argv[])
     // Step 2: Specify server address
     server_socket.sin_family = AF_INET;
     server_socket.sin_port = htons(SERV_PORT);
-    server_socket.sin_addr.s_addr = inet_addr(argc > 1?argv[1]:"127.0.0.1");
+    server_socket.sin_addr.s_addr = inet_addr(argc > 1 ? argv[1] : "127.0.0.1");
     printf("server IP = %s ", inet_ntoa(server_socket.sin_addr));
+    FILE *logfile = fopen("log.txt", "a");
+    fprintf(logfile, "server IP = %s ", inet_ntoa(server_socket.sin_addr));
+    fclose(logfile);
 
     // Step3: Request to connect server
     if (connect(client_sock_fd, (struct sockaddr *)&server_socket, sizeof(server_socket)) < 0){
@@ -377,6 +385,9 @@ int createClient(int argc, char *argv[])
         showBubbleNotify(errorMessage);
     }
     else
+        logfile = fopen("log.txt", "a");
+        fprintf(logfile, "connected to server\n");
+        fclose(logfile);
         printf("connected to server\n");
 
     // Signal driven I/O mode and NONBlOCK mode so that recv will not block

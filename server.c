@@ -36,6 +36,9 @@ int sendResponse(int connfd)
         strcat(buf, ACK);
     }
     printf("Send to client socket %d:[%s]\n",connfd, buf);
+    // FILE *logfile = fopen('log.txt', 'a');
+    // fprintf(logfile, "Server send to client socket %d:[%s]\n",connfd, buf);
+    // fclose(logfile);
     return send(connfd, buf, strlen(buf), 0);
 }
 int broadCast()
@@ -382,6 +385,9 @@ int createServer()
     // Step 2: Bind address to socket
     if (bind(listenfd, (struct sockaddr *)&servaddr, sizeof(servaddr)) >= 0)
     {
+        // FILE *abc = fopen('log.txt', 'a');
+        // fprintf(abc, "Server is running at port %d\n", SERV_PORT);
+        // fclose(abc);
         puts("Server address is one of:");
         system("ifconfig | perl -nle'/dr:(\\S+)/ && print $1'");
         printf("Server is running at port %d\n", SERV_PORT);
@@ -434,6 +440,9 @@ int createServer()
                         FD_SET(connfd, &master);
                         printf("New connection on socket %d\n", connfd);
                         handleNewConnection(connfd);
+                        // FILE *logfile = fopen('log.txt', 'a');
+                        // fprintf(logfile, "New connection on socket %d\n", connfd);
+                        // fclose(logfile);
                     }
                 }
                 else    // Send message

@@ -1,0 +1,7 @@
+{
+  "files.associations": {
+    "bit": "c",
+    "cmath": "c",
+    "complex": "c"
+  }
+}
