@@ -29,6 +29,7 @@ int auth[USER_NUM_MAX];
 User userRegister;  // temp user save to File
 int countUserOfFile;
 
+
 int sendResponse(int connfd)
 {
     if (strstr(buf, ACK) == NULL)
@@ -36,9 +37,6 @@ int sendResponse(int connfd)
         strcat(buf, ACK);
     }
     printf("Send to client socket %d:[%s]\n",connfd, buf);
-    // FILE *logfile = fopen('log.txt', 'a');
-    // fprintf(logfile, "Server send to client socket %d:[%s]\n",connfd, buf);
-    // fclose(logfile);
     return send(connfd, buf, strlen(buf), 0);
 }
 int broadCast()
@@ -164,6 +162,13 @@ int loadUserList(const char *source)
     for (i = 0; fgets(temp, 200, f) != NULL; i++)
     {
         sscanf(temp, "%s %s", users[i].username, users[i].password);
+        char *filename = (char *)malloc(1024);
+        char *temp = (char *)malloc(1024);
+        strcpy(temp, users[i].username);
+        strcat(filename, "filelog/");
+        strcat(filename, strcat(temp, ".log"));
+        FILE *file = fopen(filename, "a ");
+        fclose(file);
         // printf("User:{\n  username:\"%s\"\n  password:\"%s\"\n}\n", users[i].username, users[i].password);
     }
     fclose(f);
@@ -172,6 +177,14 @@ int loadUserList(const char *source)
 
 void handleUserLogout(int connfd)
 {
+    char *filename = (char *)malloc(1024);
+    char *temp = (char *)malloc(1024);
+    strcpy(temp, users[auth[connfd]].username);
+    strcat(filename, "filelog/");
+    strcat(filename, strcat(temp, ".log"));
+    FILE *file = fopen(filename, "a");
+    fprintf(file, "Server handler logout client: %d\n", connfd);
+    fclose(file);
     int userId = auth[connfd];
     printf("\n{\n  username:%s,\n  status:logout\n}\n", users[auth[connfd]].username);
     users[userId].fd = NONE_SOCKET;
@@ -217,6 +230,15 @@ int handleUserSendPassword(char *message, int connfd)
     if (userId == CODE_PASSWORD_INCORRECT) // password incorrect
     {
         sprintf(buf, "%c%s#%s", LOGIN_RESPONSE_ACTION, FAILED, ACCOUNT_INVALID);
+        char *filename = (char *)malloc(1024);
+        char *temp = (char *)malloc(1024);
+        printf("******%d\n", auth[connfd]);
+        strcpy(temp, users[-auth[connfd]-1].username);
+        strcat(filename, "filelog/");
+        strcat(filename, strcat(temp, ".log"));
+        FILE *file = fopen(filename, "a");
+        fprintf(file, "Server handler login failed from client: %d\n", connfd);
+        fclose(file);
     }
     else
     {
@@ -226,6 +248,15 @@ int handleUserSendPassword(char *message, int connfd)
         {
             cleanBuffer();
             sprintf(buf, "%c%s#%s", LOGIN_RESPONSE_ACTION, FAILED, SESSION_INVALID);
+            char *filename = (char *)malloc(1024);
+            char *temp = (char *)malloc(1024);
+            printf("******%d\n", auth[connfd]);
+            strcpy(temp, users[auth[connfd]].username);
+            strcat(filename, "filelog/");
+            strcat(filename, strcat(temp, ".log"));
+            FILE *file = fopen(filename, "a");
+            fprintf(file, "Server handler logined by another from client: %d\n", connfd);
+            fclose(file);
         }
         else // Account logged normaly
         {
@@ -233,6 +264,15 @@ int handleUserSendPassword(char *message, int connfd)
             auth[connfd] = userId; // update auth, this connfd -> user
             users[userId].fd = connfd;
             printf("\n{\n  username:%s,\n  status:logged\n}\n", users[auth[connfd]].username);
+            char *filename = (char *)malloc(1024);
+            char *temp = (char *)malloc(1024);
+            printf("******%d\n", auth[connfd]);
+            strcpy(temp, users[auth[connfd]].username);
+            strcat(filename, "filelog/");
+            strcat(filename, strcat(temp, ".log"));
+            FILE *file = fopen(filename, "a");
+            fprintf(file, "Server handler login success from client: %d\n", connfd);
+            fclose(file);
         }
     }
     sendResponse(connfd);
@@ -243,6 +283,13 @@ int handleUserSendPasswordRegister(char *message, int connfd){
     strcpy(userRegister.password, crypt(message, "salt"));
     strcpy(users[countUserOfFile].username, userRegister.username);
     strcpy(users[countUserOfFile].password, userRegister.password);
+        char *filename = (char *)malloc(1024);
+        char *temp = (char *)malloc(1024);
+        strcpy(temp, users[countUserOfFile].username);
+        strcat(filename, "filelog/");
+        strcat(filename, strcat(temp, ".log"));
+        FILE *file = fopen(filename, "w");
+        fclose(file);
     FILE *f = fopen("users.txt", "w+");
     // printf("%s %s \n", users[0].username, users[0].password);
     for(int i = 0; i <= countUserOfFile; i++){
@@ -320,6 +367,27 @@ int handleMessage(int connfd)
         message = readBuf + 1;
         printf("\n{\n\taction:%c,\n\tmessage:%s\n}\n", action, message);
         cleanBuffer();
+        if(strlen(users[-auth[connfd]-1].username) > 0){
+            char *filename = (char *)malloc(1024);
+            char *temp = (char *)malloc(1024);
+            strcpy(temp, users[-auth[connfd]-1].username);
+            strcat(filename, "filelog/");
+            strcat(filename, strcat(temp, ".log"));
+            FILE *file = fopen(filename, "a");
+            fprintf(file, "Server handler message from client: %d\n", connfd);
+            fprintf(file, "{\n\taction:%c,\n\tmessage:%s\n}\n", action, message);
+            fclose(file);
+        }else if(strlen(users[auth[connfd]].username) > 0){
+            char *filename = (char *)malloc(1024);
+            char *temp = (char *)malloc(1024);
+            strcpy(temp, users[auth[connfd]].username);
+            strcat(filename, "filelog/");
+            strcat(filename, strcat(temp, ".log"));
+            FILE *file = fopen(filename, "a");
+            fprintf(file, "Server handler message from client: %d\n", connfd);
+            fprintf(file, "{\n\taction:%c,\n\tmessage:%s\n}\n", action, message);
+            fclose(file);
+        }
         switch (action)
         {
         case SEND_USER_ACTION:
@@ -385,9 +453,6 @@ int createServer()
     // Step 2: Bind address to socket
     if (bind(listenfd, (struct sockaddr *)&servaddr, sizeof(servaddr)) >= 0)
     {
-        // FILE *abc = fopen('log.txt', 'a');
-        // fprintf(abc, "Server is running at port %d\n", SERV_PORT);
-        // fclose(abc);
         puts("Server address is one of:");
         system("ifconfig | perl -nle'/dr:(\\S+)/ && print $1'");
         printf("Server is running at port %d\n", SERV_PORT);
@@ -411,6 +476,7 @@ int createServer()
     // fprintf(stdout, "Current maxfd: %d\n", maxfd);
     // fflush(stdout);
     printf("Current maxfd: %d\n", maxfd);
+    FILE *fpt = NULL;
     while (1)
     {
         readfds = master;
@@ -440,9 +506,6 @@ int createServer()
                         FD_SET(connfd, &master);
                         printf("New connection on socket %d\n", connfd);
                         handleNewConnection(connfd);
-                        // FILE *logfile = fopen('log.txt', 'a');
-                        // fprintf(logfile, "New connection on socket %d\n", connfd);
-                        // fclose(logfile);
                     }
                 }
                 else    // Send message
